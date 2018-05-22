@@ -6,7 +6,7 @@ ASTACK ENDS
 
 CODE SEGMENT
 ;----------------------------
-OUTPUT_PROC PROC NEAR ;Вывод на экран сообщения
+OUTPUT_PROC PROC NEAR ;Р’С‹РІРѕРґ РЅР° СЌРєСЂР°РЅ СЃРѕРѕР±С‰РµРЅРёСЏ
 		push ax
 		mov  ah, 09h
 	    int  21h
@@ -16,37 +16,19 @@ OUTPUT_PROC ENDP
 ;----------------------------
 INTERRUPTION PROC FAR
 	jmp begin
-	ADDR_PSP1   dw  ;offset 3
-	ADDR_PSP2   dw  ;offset 5
-	KEEP_IP 	dw  ;offset 7
-	KEEP_CS 	dw  ;offset 9
+	ADDR_PSP1   dw ? ;offset 3
+	ADDR_PSP2   dw ? ;offset 5
+	KEEP_IP 	dw ? ;offset 7
+	KEEP_CS 	dw ? ;offset 9
 	INTER_SET 	dw 0ABCDh ;offset 11
 	REQ_KEY_6	db 07h
 	REQ_KEY_7	db 08h
 	REQ_KEY_8	db 09h
 	REQ_KEY_9	db 0Ah
 	REQ_KEY_0	db 0Bh
-	INT_STACK	dw 64 dup (?)
-	KEEP_SS		dw 
-	KEEP_AX		dw 
-	KEEP_SP		dw 
 
 begin:
-	mov KEEP_SS, ss
- 	mov KEEP_SP, sp
- 	mov KEEP_AX, ax
- 	mov ax, seg INT_STACK
- 	mov ss, ax
- 	mov sp, 0
- 	mov ax, KEEP_AX  
-	
-	mov ax,0040h
-	mov es,ax
-	mov al,es:[17h]
-	and al,00000010b
-	jnz stand_set
-	
-	in al,60h ;Cчитать ключ
+	in al,60h ;CС‡РёС‚Р°С‚СЊ РєР»СЋС‡
 	
 	cmp al, REQ_KEY_6
 	je 	key6 
@@ -63,17 +45,7 @@ begin:
 	cmp al, REQ_KEY_0
 	je 	key0
 	
-	mov ss, KEEP_SS 
- 	mov sp, KEEP_SP
-	
-	stand_set:
-		pop es
-		pop ds
-		pop dx
-		mov ax, CS:KEEP_AX
-		mov sp, CS:KEEP_SP
-		mov ss, CS:KEEP_SS
-		jmp dword ptr cs:[KEEP_IP]
+	jmp dword ptr cs:[KEEP_IP] ;РїРµСЂРµС…РѕРґРёРј РЅР° СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ РѕР±СЂР°Р±РѕС‚С‡РёРє
 
 	key6:
 		mov cl, 'A'
@@ -91,27 +63,28 @@ begin:
 		mov cl, 'E'
 
 	do_req:
-		in al,61h	;Взять значение порта управления клавиатурой
-		mov ah,al	;Сохранить его
-		or al,80h	;Установить бит разрешения для клавиатуры
-		out 61h,al	;И вывести его в управляющий порт
-		xchg ah, al	;Извлечь исходное значение порта
-		out 61h,al	;И записать его обратно
-		mov al,20h	;Послать сигнал конца прерывания контроллеру прерываний 8259 
+		in al,61h	;Р’Р·СЏС‚СЊ Р·РЅР°С‡РµРЅРёРµ РїРѕСЂС‚Р° СѓРїСЂР°РІР»РµРЅРёСЏ РєР»Р°РІРёР°С‚СѓСЂРѕР№
+		mov ah,al	;РЎРѕС…СЂР°РЅРёС‚СЊ РµРіРѕ
+		or al,80h	;РЈСЃС‚Р°РЅРѕРІРёС‚СЊ Р±РёС‚ СЂР°Р·СЂРµС€РµРЅРёСЏ РґР»СЏ РєР»Р°РІРёР°С‚СѓСЂС‹
+		out 61h,al	;Р РІС‹РІРµСЃС‚Рё РµРіРѕ РІ СѓРїСЂР°РІР»СЏСЋС‰РёР№ РїРѕСЂС‚
+		xchg ah, al	;РР·РІР»РµС‡СЊ РёСЃС…РѕРґРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РїРѕСЂС‚Р°
+		out 61h,al	;Р Р·Р°РїРёСЃР°С‚СЊ РµРіРѕ РѕР±СЂР°С‚РЅРѕ
+		mov al,20h	;РџРѕСЃР»Р°С‚СЊ СЃРёРіРЅР°Р» РєРѕРЅС†Р° РїСЂРµСЂС‹РІР°РЅРёСЏ РєРѕРЅС‚СЂРѕР»Р»РµСЂСѓ РїСЂРµСЂС‹РІР°РЅРёР№ 8259 
 		out 20h,al	
 		
 		push bx
 		push cx
 		push dx	
 	
-		mov ah, 05h ;функция, позволяющая записать символ в буфер клавиатуры
-		mov ch, 00h ;символ в CL уже занесён ранее, осталось обнулить CH	
+		mov ah, 05h ;С„СѓРЅРєС†РёСЏ, РїРѕР·РІРѕР»СЏСЋС‰Р°СЏ Р·Р°РїРёСЃР°С‚СЊ СЃРёРјРІРѕР» РІ Р±СѓС„РµСЂ РєР»Р°РІРёР°С‚СѓСЂС‹
+		mov cl,al
+		mov ch, 00h ;СЃРёРјРІРѕР» РІ CL СѓР¶Рµ Р·Р°РЅРµСЃС‘РЅ СЂР°РЅРµРµ, РѕСЃС‚Р°Р»РѕСЃСЊ РѕР±РЅСѓР»РёС‚СЊ CH	
 		int 16h
-		or 	al, al	;проверка переполнения буфера
-		jnz skip 	;если переполнен - идём в skip
-		jmp return	;иначе выходим
+		or 	al, al	;РїСЂРѕРІРµСЂРєР° РїРµСЂРµРїРѕР»РЅРµРЅРёСЏ Р±СѓС„РµСЂР°
+		jnz skip 	;РµСЃР»Рё РїРµСЂРµРїРѕР»РЅРµРЅ - РёРґС‘Рј РІ skip
+		jmp return	;РёРЅР°С‡Рµ РІС‹С…РѕРґРёРј
 	
-	skip: 			;очищаем буфер
+	skip: 			;РѕС‡РёС‰Р°РµРј Р±СѓС„РµСЂ
 		push es
 		push si
 		mov ax, 0040h
@@ -126,26 +99,22 @@ begin:
 	return:
 		pop dx    
 		pop cx
-		pop bx	
-		mov ax, KEEP_SS
-		mov ss, ax
-		mov ax, KEEP_AX
-		mov sp, KEEP_SP
+		pop bx		
 		iret
 INTERRUPTION ENDP
 ;----------------------------
-last_byte:
-INSTALL_CHECK PROC NEAR	;Проверка установки прерывания
+inter_end:
+INSTALL_CHECK PROC NEAR	;РџСЂРѕРІРµСЂРєР° СѓСЃС‚Р°РЅРѕРІРєРё РїСЂРµСЂС‹РІР°РЅРёСЏ
 	push bx
 	push dx
 	push es
 
-	mov ah, 35h	;Получение вектора прерываний
-	mov al, 09h	;Функция выдает значение сегмента в ES, смещение в BX
+	mov ah, 35h	;РџРѕР»СѓС‡РµРЅРёРµ РІРµРєС‚РѕСЂР° РїСЂРµСЂС‹РІР°РЅРёР№
+	mov al, 09h	;Р¤СѓРЅРєС†РёСЏ РІС‹РґР°РµС‚ Р·РЅР°С‡РµРЅРёРµ СЃРµРіРјРµРЅС‚Р° РІ ES, СЃРјРµС‰РµРЅРёРµ РІ BX
 	int 21h
 
 	mov dx, es:[bx + 11]
-	cmp dx, 0ABCDh ;Проверка на совпадение кода прерывания 
+	cmp dx, 0ABCDh ;РџСЂРѕРІРµСЂРєР° РЅР° СЃРѕРІРїР°РґРµРЅРёРµ РєРѕРґР° РїСЂРµСЂС‹РІР°РЅРёСЏ 
 	je install_
 	mov al, 00h
 	jmp end_install
@@ -161,7 +130,7 @@ end_install:
 	ret
 INSTALL_CHECK ENDP
 ;----------------------------
-UN_CHECK PROC NEAR ;Проверка на то, не ввёл ли пользователь /un
+UN_CHECK PROC NEAR ;РџСЂРѕРІРµСЂРєР° РЅР° С‚Рѕ, РЅРµ РІРІС‘Р» Р»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ /un
 	push es
 	mov ax, ADDR_PSP1
 	mov es, ax
@@ -179,7 +148,7 @@ not_enter:
 	ret
 UN_CHECK ENDP
 ;----------------------------
-INSTALL_INTER PROC NEAR ;Cохранение стандартного обработчика прерываний и загрузка собственного
+INSTALL_INTER PROC NEAR ;CРѕС…СЂР°РЅРµРЅРёРµ СЃС‚Р°РЅРґР°СЂС‚РЅРѕРіРѕ РѕР±СЂР°Р±РѕС‚С‡РёРєР° РїСЂРµСЂС‹РІР°РЅРёР№ Рё Р·Р°РіСЂСѓР·РєР° СЃРѕР±СЃС‚РІРµРЅРЅРѕРіРѕ
 	push ax
 	push bx
 	push dx
@@ -189,7 +158,7 @@ INSTALL_INTER PROC NEAR ;Cохранение стандартного обработчика прерываний и загруз
 	mov al, 09h
 	int 21h
 
-	mov KEEP_IP, bx	;Запоминаем смещение и сегмент
+	mov KEEP_IP, bx	;Р—Р°РїРѕРјРёРЅР°РµРј СЃРјРµС‰РµРЅРёРµ Рё СЃРµРіРјРµРЅС‚
 	mov KEEP_CS, es
 
 	push ds
@@ -213,7 +182,7 @@ INSTALL_INTER PROC NEAR ;Cохранение стандартного обработчика прерываний и загруз
 	ret
 INSTALL_INTER ENDP
 ;----------------------------
-UNLOAD_INTER PROC NEAR	;Выгрузка обработчика прерывания
+UNLOAD_INTER PROC NEAR	;Р’С‹РіСЂСѓР·РєР° РѕР±СЂР°Р±РѕС‚С‡РёРєР° РїСЂРµСЂС‹РІР°РЅРёСЏ
 	push ax
 	push bx
 	push dx
@@ -238,7 +207,7 @@ UNLOAD_INTER PROC NEAR	;Выгрузка обработчика прерывания
 	lea dx, UNLOAD
 	call OUTPUT_PROC 
 
-	push es ;Удаление MCB
+	push es ;РЈРґР°Р»РµРЅРёРµ MCB
 	mov cx,es:[bx+3]
 	mov es,cx
 	mov ah,49h
@@ -254,7 +223,7 @@ UNLOAD_INTER PROC NEAR	;Выгрузка обработчика прерывания
 	pop bx
 	pop ax
 	
-	mov ah, 4Ch	;Выход из программы через функцию 4C
+	mov ah, 4Ch	;Р’С‹С…РѕРґ РёР· РїСЂРѕРіСЂР°РјРјС‹ С‡РµСЂРµР· С„СѓРЅРєС†РёСЋ 4C
 	int 21h
 	ret
 UNLOAD_INTER ENDP
@@ -263,7 +232,7 @@ MAIN  PROC FAR
     mov bx,2Ch
 	mov ax,[bx]
 	mov ADDR_PSP2,ax
-	mov ADDR_PSP1,ds  ;сохраняем PSP
+	mov ADDR_PSP1,ds  ;СЃРѕС…СЂР°РЅСЏРµРј PSP
 	mov dx, ds 
 	sub ax,ax    
 	xor bx,bx
@@ -271,29 +240,29 @@ MAIN  PROC FAR
 	mov ds,ax 
 	xor dx, dx
 
-	call UN_CHECK ;Проверка на введение /un 
+	call UN_CHECK ;РџСЂРѕРІРµСЂРєР° РЅР° РІРІРµРґРµРЅРёРµ /un 
 	cmp al, 01h
 	je unload_		
 
-	call INSTALL_CHECK  ;Проверка не является ли программа резидентной
+	call INSTALL_CHECK  ;РџСЂРѕРІРµСЂРєР° РЅРµ СЏРІР»СЏРµС‚СЃСЏ Р»Рё РїСЂРѕРіСЂР°РјРјР° СЂРµР·РёРґРµРЅС‚РЅРѕР№
 	cmp al, 01h
 	jne not_resident
 	
-	lea dx, ALR_INSTALL ;Программа уже загружена
+	lea dx, ALR_INSTALL ;РџСЂРѕРіСЂР°РјРјР° СѓР¶Рµ Р·Р°РіСЂСѓР¶РµРЅР°
 	call OUTPUT_PROC
 	jmp quit
 
-;Загрузка резидента
+;Р—Р°РіСЂСѓР·РєР° СЂРµР·РёРґРµРЅС‚Р°
 not_resident: 
 	call INSTALL_INTER 
-	lea dx, last_byte
+	lea dx, inter_end
 	mov cl, 04h
 	shr dx, cl
 	add dx, 1Bh
 	mov ax, 3100h
 	int 21h
 	
-;Выгрузка резидента      
+;Р’С‹РіСЂСѓР·РєР° СЂРµР·РёРґРµРЅС‚Р°      
 unload_:
 	call INSTALL_CHECK
 	cmp al, 0h
@@ -301,7 +270,7 @@ unload_:
 	call UNLOAD_INTER
 	jmp quit
 
-;Прерывание выгружено
+;РџСЂРµСЂС‹РІР°РЅРёРµ РІС‹РіСЂСѓР¶РµРЅРѕ
 not_install_: 
 	lea dx, UNLOAD
 	call OUTPUT_PROC
